@@ -2,6 +2,10 @@ const BOARD_SIZE = 30;
 const GRID_SIZE = 20;
 
 let board = [];
+
+//init x and y of last frame
+let x_last_frame = null, y_last_frame = null;
+
 class Board
 {
 	constructor(x, y)
@@ -14,7 +18,7 @@ class Board
 		this.x = x;
 		this.y = y;
 
-		this. color = 'white';
+		this.color = 'white';
 		this.status = 'clear';
 	}
 
@@ -31,26 +35,64 @@ class Board
 	{
 		this.status = 'wall'
 		this.color = 60;
+		this.drawCell();
+	}
+
+	isWall()
+	{
+		if (this.status == 'wall') return true;
+		else return false;
 	}
 
 	setClear()
 	{
 		this.status = 'clear'
 		this.color = 'white';
+		this.drawCell();
+	}
+
+	isClear()
+	{
+		if (this.status == 'clear') return true;
+		else return false;
+	}
+
+	setStartNode()
+	{
+		this.status = 'start'
+		this.color = 'blue';
+		this.drawCell();
+	}
+	isStart()
+	{
+		if (this.status == 'start') return true;
+		else return false;
+	}
+
+	setEndNode()
+	{
+		this.status = 'end'
+		this.color = 'red';
+		this.drawCell();
+	}
+	isEnd()
+	{
+		if (this.status == 'end') return true;
+		else return false;
 	}
 }
 
 function setup()
 {
 	// createCanvas(displayWidth *  0.999, displayHeight *  0.875);
-	createCanvas((BOARD_SIZE * GRID_SIZE) + 1, (BOARD_SIZE * GRID_SIZE) + 1);
-	// frameRate(5);
+	createCanvas(BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE);
+	frameRate(5);
 
-	//DISABLE CONTEXT MENU
-	for (let element of document.getElementsByClassName("p5Canvas"))
-		element.addEventListener("contextmenu", (e) => e.preventDefault());
+	//disable context menu within p5Canvas
+	// for (let element of document.getElementsByClassName("p5Canvas"))
+	// 	element.addEventListener("contextmenu", (e) => e.preventDefault());
 	
-	// construct grid matrix
+	// init and construct grid matrix
 	for (let x = 0; x < BOARD_SIZE * GRID_SIZE; x += 20)
 	{
 		let row = [];
@@ -80,28 +122,35 @@ function draw()
 
 function mouseDragged()
 {
-	handleUI();
+	handleInput();
+	// print(frameRate());
 }
-
 
 function mousePressed()
 {
-	handleUI();
+	handleInput();
+
+	x_last_frame = y_last_frame = null; // resetting in case mouse
 }
 
-function handleUI()
+function handleInput()
 {
-	var x = Math.floor(mouseX / BOARD_SIZE * 1.5);
-	var y = Math.floor(mouseY / BOARD_SIZE * 1.5);
+	//idk wtf 1.5 is.. it's just trial and error
+	var x_this_frame = Math.floor(mouseX / BOARD_SIZE * 1.5);
+	var y_this_frame = Math.floor(mouseY / BOARD_SIZE * 1.5);
 
-	console.info("NDC: ", x, ":", y);
-	if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE)
+
+	//DRAWING WALL AND CLEARING WALL 
+	if (x_this_frame >= 0 && x_this_frame < BOARD_SIZE && y_this_frame >= 0 && y_this_frame < BOARD_SIZE && mouseButton == LEFT)	//checking if within boundary
 	{
-		if (mouseButton == LEFT)
-			board[x][y].setWall();
-		else
-			board[x][y].setClear();
-
-		board[x][y].drawCell();
+		if (x_this_frame != x_last_frame || y_this_frame != y_last_frame)	//if (x,y) not at same grid as last frame do things
+		{
+			if(board[x_this_frame][y_this_frame].isClear())
+				board[x_this_frame][y_this_frame].setWall();
+			else
+				board[x_this_frame][y_this_frame].setClear();
+		}
 	}
+	x_last_frame = x_this_frame;
+	y_last_frame = y_this_frame;
 }
