@@ -1,5 +1,5 @@
-const BOARD_SIZE = 30;
-const GRID_SIZE = 20;
+const BOARD_SIZE = 120;
+const GRID_SIZE = 5;
 
 let board = [];
 
@@ -27,7 +27,7 @@ class Board
 		rectMode(CORNERS);
 		fill(this.color);
 		stroke('black');
-		strokeWeight(0.5);
+		strokeWeight(0.1);
 		rect(this.x , this.y, this.x + GRID_SIZE, this.y + GRID_SIZE);
 	}
 
@@ -85,7 +85,7 @@ class Board
 function setup()
 {
 	// createCanvas(displayWidth *  0.999, displayHeight *  0.875);
-	createCanvas(BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE);
+	createCanvas(BOARD_SIZE * GRID_SIZE + 1, BOARD_SIZE * GRID_SIZE + 1);
 	frameRate(5);
 
 	//disable context menu within p5Canvas
@@ -93,10 +93,10 @@ function setup()
 	// 	element.addEventListener("contextmenu", (e) => e.preventDefault());
 	
 	// init and construct grid matrix
-	for (let x = 0; x < BOARD_SIZE * GRID_SIZE; x += 20)
+	for (let x = 0; x < BOARD_SIZE * GRID_SIZE; x += GRID_SIZE)
 	{
 		let row = [];
-		for (let y = 0; y < BOARD_SIZE * GRID_SIZE; y += 20)
+		for (let y = 0; y < BOARD_SIZE * GRID_SIZE; y += GRID_SIZE)
 		{
 			var cell = new Board(x, y);
 			row.push(cell);
@@ -130,14 +130,14 @@ function mousePressed()
 {
 	handleInput();
 
-	x_last_frame = y_last_frame = null; // resetting in case mouse
+	//x_last_frame = y_last_frame = null; // resetting in case mouse
 }
 
 function handleInput()
 {
-	//idk wtf 1.5 is.. it's just trial and error
-	var x_this_frame = Math.floor(mouseX / BOARD_SIZE * 1.5);
-	var y_this_frame = Math.floor(mouseY / BOARD_SIZE * 1.5);
+	// normalizing the mouseX and mouseY to be within range of grid size
+	var x_this_frame = Math.floor(mouseX / BOARD_SIZE * (BOARD_SIZE/GRID_SIZE));
+	var y_this_frame = Math.floor(mouseY / BOARD_SIZE * (BOARD_SIZE/GRID_SIZE));
 
 
 	//DRAWING WALL AND CLEARING WALL 
