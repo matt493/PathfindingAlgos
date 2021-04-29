@@ -154,8 +154,6 @@ function mouseDragged()
 			else
 			{
 				mouseLock = false;
-				// heldNode = null;
-				// print('idk');
 			}
 
 			if(board[x_curr][y_curr].isStart() && heldNode == 'end')
