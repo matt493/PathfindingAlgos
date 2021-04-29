@@ -7,8 +7,9 @@ let board = [];
 let x_last = null, y_last = null;	//init x and y of last frame
 let x_curr = null, y_curr = null;	//init x and y of this frame
 let mouseLock = false;	//init mouseLock as false
-let heldNode = null;
+let heldCell = null;
 let lastCell = null;
+let currCell = null;
 
 
 class Board
@@ -36,13 +37,19 @@ class Board
 		rect(this.x , this.y, this.x + GRID_SIZE, this.y + GRID_SIZE);
 	}
 
+	setStatus(status)
+	{
+		if(status == 'wall') this.setWall();
+		else if(status == 'clear') this.setClear();
+		else if(status == 'start') this.setStart();
+		else if(status == 'end') this.setEnd();
+	}
+
 	setWall()
 	{
-
 		this.status = 'wall'
 		this.color = 60;
 		this.drawCell();
-		
 	}
 
 	isWall()
@@ -135,69 +142,17 @@ function test()
 
 function mouseDragged()
 {
-	if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT && mouseButton == LEFT)	//checking if within boundary
-	{
-		if (mouseLock && (x_curr != x_last || y_curr != y_last))
-		{
-			lastCell = board[x_last][y_last].status;
-			print('lastCell',lastCell);
-			print('currCell',board[x_curr][y_curr].status);
-
-			if(heldNode == 'start' && !board[x_curr][y_curr].isEnd())
-			{
-				board[x_curr][y_curr].setStart();
-			}
-			else if(heldNode == 'end' && !board[x_curr][y_curr].isStart())
-			{
-				board[x_curr][y_curr].setEnd();
-			}
-			else
-			{
-				mouseLock = false;
-			}
-
-			if(board[x_curr][y_curr].isStart() && heldNode == 'end')
-			{
-				// board[x_last][y_last].setEnd();
-			}
-			else if(board[x_curr][y_curr].isEnd() && heldNode == 'start')
-			{
-				// board[x_last][y_last].setStart();
-			} 
-			else
-			{
-				board[x_last][y_last].setClear();
-			} 
-			// else if(!board[x_curr][y_curr].isEnd() || !board[x_curr][y_curr].isStart()) board[x_last][y_last].setClear();
-
-
-			// if(board[x_curr][y_curr].isStart() || board[x_curr][y_curr].isEnd())	//see if curr cell is start or end
-			// {
-			// 	board[x_last][y_last].setClear();
-			// }
-			// else
-			// {
-			// 	board[x_last][y_last].setClear();
-			// }
-			
-			// print('curr',board[x_curr][y_curr].status);
-			// print('last',board[x_last][y_last].status);
-		}
-	}
-	else
-	{
-		mouseLock = false;
-		heldNode = null;
-	}
-
+	dragNode();
 	handleInput();
 }
+
 
 function mousePressed()
 {
 	pickupNode();
+
+	x_last = y_last = null;		//need to be before handleInput()
 	handleInput();
-	// x_last = y_last = null; // resetting in case mouse
 }
 
 function mouseReleased()
@@ -205,17 +160,52 @@ function mouseReleased()
 	releaseNode();
 }
 
+
+
 //#region UtilFuncs
+
+function dragNode()
+{
+	if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT && mouseButton == LEFT) //checking if within boundary
+	{
+		if (mouseLock && (x_curr != x_last || y_curr != y_last)) //mouse locked and not at same pos
+		{
+			if (heldCell != null) {
+				// console.clear();
+				// print('lastcell:',board[x_last][y_last].status);
+				// print('currcell:',board[x_curr][y_curr].status);
+				if (board[x_last][y_last].isStart() || board[x_last][y_last].isEnd()) {
+					if (!board[x_curr][y_curr].isWall()) {
+
+						if (board[x_curr][y_curr].isStart() && heldNode == 'end') { } //MIRACLE CODE
+						else if (board[x_curr][y_curr].isEnd() && heldNode == 'start') { } //MIRACLE CODE
+
+						else {
+							board[x_curr][y_curr].setStatus(heldCell);
+							board[x_last][y_last].setClear();
+						}
+					}
+				}
+				else if (board[x_last][y_last].isWall()) {
+					// mouseLock = false;
+					heldCell = null;
+				}
+			}
+		}
+	}
+	else
+	{
+		mouseLock = false;
+		heldCell = null;
+	}
+}
+
 function releaseNode() 
 {
 	if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT && mouseButton == LEFT) //checking if within boundary
 	{
-		if (board[x_curr][y_curr].isStart() || board[x_curr][y_curr].isEnd()) //see if current cell is start or end
-		{
-			mouseLock = false; //if yes, lock = false
-			heldNode = null;
-			// print('mouse unlocked');
-		}
+		mouseLock = false;
+		heldCell = null;
 	}
 }
 
@@ -238,26 +228,23 @@ function handleInput()
 			}
 		}
 	}
+
+	//needs to be at bottom
 	x_last = x_curr;
 	y_last = y_curr;
 }
 
-function pickupNode() 
+function pickupNode()
 {
 	if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT && mouseButton == LEFT) //checking if within boundary
 	{
 		if (board[x_curr][y_curr].isStart() || board[x_curr][y_curr].isEnd()) //see if current cell is start or end
 		{
-			mouseLock = true; //if yes, lock = true
-			heldNode = board[x_curr][y_curr].status;
-			// print('mouse locked holding:', heldNode);
+			mouseLock = true; //if yes, lock the mouse
+			heldCell = board[x_curr][y_curr].status;
+			lastCell = 'clear';
 		}
 	}
-	// else
-	// {
-	// 	mouseLock = false;
-	// 	heldNode = null;
-	// }
 }
 
 function drawGrid()
