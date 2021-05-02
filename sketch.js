@@ -1,5 +1,5 @@
-const BOARD_WIDTH = 30;
-const BOARD_HEIGHT = 30;
+const BOARD_WIDTH = 20;
+const BOARD_HEIGHT = 25;
 const GRID_SIZE = 20;
 const BACKGROUND = 240;
 
@@ -15,6 +15,7 @@ var x_curr, y_curr;	//init x and y of this frame
 var mouseLock;	//init mouseLock as false
 var heldCell;
 var found;
+var locked;
 
 var START;
 var END;
@@ -157,15 +158,15 @@ function draw()
 
 	// clear();
 	// drawGrid();
-}
 
+	
+}
 
 function mouseDragged()
 {
 	dragNode();
 	handleInput();
 }
-
 
 function mousePressed()
 {
@@ -194,6 +195,7 @@ function initStartParams()
 	mouseLock = false;	//init mouseLock as false
 	heldCell = null;
 	found = false;
+	locked = true;
 
 	START = null;
 	END = null;
@@ -219,7 +221,6 @@ function initStartParams()
 			if(x-1 >= 0)				board[x][y].left = board[x-1][y];
 			if(x+1 <= BOARD_WIDTH-1)	board[x][y].right = board[x+1][y];
 		}
-
 
 	board[0][0].setStart();		//init start node at top left
 	board[BOARD_WIDTH - 1][BOARD_HEIGHT - 1].setEnd();	//init end node at bottom right
@@ -255,59 +256,89 @@ function reset()
 }
 //==============================================================================================================================================================================
 
+// function delay(ms)
+// {
+// 	var cur_d = new Date();
+// 	var cur_ticks = cur_d.getTime();
+// 	var ms_passed = 0;
+// 	while(ms_passed < ms)
+// 	{
+// 		var d = new Date();  // Possible memory leak?
+// 		var ticks = d.getTime();
+// 		ms_passed = ticks - cur_ticks;
+// 		// d = null;  // Prevent memory leak?
+// 	}
+// }
 
+// function delay(millis)
+// {
+//     return new Promise(resolve =>{setTimeout(resolve, millis);});
+// }
+
+function delay(millis)
+{
+    return new Promise(resolve =>{setTimeout(resolve, millis);});
+}
 
 //==============================================================================================================================================================================
 function dfs(node)
 {
-	// setTimeout(function()
-	// {
-		if(!found)
+	if(!found)
+	{
+		if(node.isTraversed() || node.isWall())
 		{
-			if(node.isTraversed() || node.isWall())
-			{
-				return;
-			}
-				
-			else if(!node.isEnd())
-			{
-				node.setTraversed();
-	
-				if(node.top != null)
-				{
-					node.top.parent = node;
-					dfs(node.top);
-				}
-				if(node.right != null)
-				{
-					node.right.parent = node;
-					dfs(node.right);
-				}
-				if(node.bottom != null)
-				{
-					node.bottom.parent = node;
-					dfs(node.bottom);
-				}
-				if(node.left != null)
-				{
-					node.left.parent = node;
-					dfs(node.left);
-				}
-			}
-			else
-			{
-				print('end reached');
-				found = true;
-				START.setStart();
-				return;
-			}
+			return;
+		}
+		else if(node.isEnd())
+		{
+			print('END FOUND');
+			found = true;
+			START.setStart();
 		}
 		else
 		{
-			if(!node.isStart()) node.setPath();
+			node.setTraversed();
+
+			if(node.right != null && !node.right.isTraversed())
+			{
+				node.right.parent = node;
+				dfs(node.right);
+				// setTimeout(dfs(node.right), 100); 
+				// return;
+			}
+			if(node.bottom != null && !node.bottom.isTraversed())
+			{
+				node.bottom.parent = node;
+				dfs(node.bottom);
+				// setTimeout(dfs(node.bottom), 100); 
+				// return;
+			}
+			if(node.left != null && !node.left.isTraversed())
+			{
+				node.left.parent = node;
+				dfs(node.left);
+				// setTimeout(dfs(node.left), 100); 
+				// return;
+			}
+			if(node.top != null && !node.top.isTraversed())
+			{
+				node.top.parent = node;
+				dfs(node.top);
+				// setTimeout(dfs(node.top), 100); 
+				// return;
+			}
 		}
-	// }, 100 + iterVal);
-	// iterVal++;
+	}
+
+	if(!node.isStart() && !node.isEnd() && found)
+	{
+		// node.setPath();
+		if(node.parent != null && !node.parent.isStart())
+		{
+			node.parent.setPath();
+		}
+		// return;
+	}
 }
 //==============================================================================================================================================================================
 function initGUI()
