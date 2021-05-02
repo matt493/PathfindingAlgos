@@ -270,11 +270,6 @@ function reset()
 // 	}
 // }
 
-// function delay(millis)
-// {
-//     return new Promise(resolve =>{setTimeout(resolve, millis);});
-// }
-
 function delay(millis)
 {
     return new Promise(resolve =>{setTimeout(resolve, millis);});
@@ -330,14 +325,9 @@ function dfs(node)
 		}
 	}
 
-	if(!node.isStart() && !node.isEnd() && found)
+	if(!node.isStart() && found && node.parent != null)
 	{
-		// node.setPath();
-		if(node.parent != null && !node.parent.isStart())
-		{
-			node.parent.setPath();
-		}
-		// return;
+		node.parent.setPath();
 	}
 }
 //==============================================================================================================================================================================
