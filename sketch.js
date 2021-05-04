@@ -1,7 +1,11 @@
-const BOARD_WIDTH = 20;
-const BOARD_HEIGHT = 25;
-const GRID_SIZE = 20;
+// const BOARD_WIDTH = 20;	//experimental
+// const BOARD_HEIGHT = 25;	//experimental
+// const GRID_SIZE = 20;	//experimental
 const BACKGROUND = 240;
+
+var BOARD_WIDTH;
+var BOARD_HEIGHT;
+var GRID_SIZE = 20;
 
 var select;
 var canvas;
@@ -16,6 +20,7 @@ var mouseLock;	//init mouseLock as false
 var heldCell;
 var found;
 var locked;
+var running;	//set to true to collapse recursion stacks when the reset button is clicked
 
 var START;
 var END;
@@ -75,8 +80,8 @@ class Board
 
 	setTraversed()
 	{
-		if(!this.isStart() && !this.isEnd())
-		this.color = 'lime';
+		if(!this.isStart())
+		this.color = 'gray';
 
 		this.status = 'traversed';
 		// this.color = 'gray';
@@ -158,8 +163,6 @@ function draw()
 
 	// clear();
 	// drawGrid();
-
-	
 }
 
 function mouseDragged()
@@ -170,10 +173,13 @@ function mouseDragged()
 
 function mousePressed()
 {
-	pickupNode();
+	if(!running)
+	{
+		pickupNode();
 
-	x_last = y_last = null;		//need to be before handleInput()
-	handleInput();
+		x_last = y_last = null;		//need to be before handleInput()
+		handleInput();
+	}
 }
 
 function mouseReleased()
@@ -207,6 +213,7 @@ function initStartParams()
 		for (let y = 0; y < BOARD_HEIGHT * GRID_SIZE; y += GRID_SIZE)
 		{
 			var cell = new Board(x, y);
+			if(random([0,1,2]) == 0) cell.setWall();	// DEBUG MAZE GEN
 			row.push(cell);
 		}
 		board.push(row)
@@ -226,60 +233,49 @@ function initStartParams()
 	board[BOARD_WIDTH - 1][BOARD_HEIGHT - 1].setEnd();	//init end node at bottom right
 }
 //==============================================================================================================================================================================
-function run()
+async function run()
 {
-	print(select.value());
-
-	for (let x = 0; x < board.length; x++)
+	if(!running)
 	{
-		for (let y = 0; y < board[x].length; y++)
+		print('algo:',select.value());
+
+		for (let x = 0; x < board.length; x++)
 		{
-			if(board[x][y].isWall() || board[x][y].isStart() || board[x][y].isEnd()){}
-			else board[x][y].setClear();
+			for (let y = 0; y < board[x].length; y++)
+			{
+				if(board[x][y].isWall() || board[x][y].isStart() || board[x][y].isEnd()){}
+				else board[x][y].setClear();
+			}
 		}
+	
+		if(select.value() == 'dfs')
+		{
+			running = true;
+			await dfs(START);
+			START.setStart();	//resetting start pos
+			running = false;
+		}
+		found = false;	//resetting found; keep at bottom of run()
 	}
-
-	if(select.value() == 'dfs')
-	{
-		dfs(START);
-		START.setStart();
-	}
-	found = false;	//keep at bottom of run()
 }
 //==============================================================================================================================================================================
 function reset()
 {
-	// clear();
-	// initStartParams();
-	// drawGrid();
-	setup();
+	if(!running)
+	{
+		setup();
+	}
 }
 //==============================================================================================================================================================================
 
-// function delay(ms)
-// {
-// 	var cur_d = new Date();
-// 	var cur_ticks = cur_d.getTime();
-// 	var ms_passed = 0;
-// 	while(ms_passed < ms)
-// 	{
-// 		var d = new Date();  // Possible memory leak?
-// 		var ticks = d.getTime();
-// 		ms_passed = ticks - cur_ticks;
-// 		// d = null;  // Prevent memory leak?
-// 	}
-// }
-
-function delay(millis)
-{
-    return new Promise(resolve =>{setTimeout(resolve, millis);});
-}
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 //==============================================================================================================================================================================
-function dfs(node)
+async function dfs(node)
 {
 	if(!found)
 	{
+		await delay(15);
 		if(node.isTraversed() || node.isWall())
 		{
 			return;
@@ -297,42 +293,40 @@ function dfs(node)
 			if(node.right != null && !node.right.isTraversed())
 			{
 				node.right.parent = node;
-				dfs(node.right);
-				// setTimeout(dfs(node.right), 100); 
-				// return;
+				await dfs(node.right);
 			}
 			if(node.bottom != null && !node.bottom.isTraversed())
 			{
 				node.bottom.parent = node;
-				dfs(node.bottom);
-				// setTimeout(dfs(node.bottom), 100); 
-				// return;
+				await dfs(node.bottom);
 			}
 			if(node.left != null && !node.left.isTraversed())
 			{
 				node.left.parent = node;
-				dfs(node.left);
-				// setTimeout(dfs(node.left), 100); 
-				// return;
+				await dfs(node.left);
 			}
 			if(node.top != null && !node.top.isTraversed())
 			{
 				node.top.parent = node;
-				dfs(node.top);
-				// setTimeout(dfs(node.top), 100); 
-				// return;
+				await dfs(node.top);
 			}
 		}
 	}
 
 	if(!node.isStart() && found && node.parent != null)
 	{
-		node.parent.setPath();
+		await delay(15);
+		if(!node.parent.isStart())node.parent.setPath();
 	}
 }
 //==============================================================================================================================================================================
 function initGUI()
 {
+	
+	BOARD_WIDTH = Math.floor((windowWidth-5) / GRID_SIZE);		//experimental
+	BOARD_HEIGHT = Math.floor((windowHeight-40) / GRID_SIZE);	//experimental
+
+
 	select = createSelect();
 	select.position(5, 10);
 
@@ -409,27 +403,30 @@ function releaseNode()
 //==============================================================================================================================================================================
 function handleInput()
 {
-	//DRAWING WALL AND CLEARING WALL
-	if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT)	//checking if within boundary
+	if(!running)
 	{
-		if(!mouseLock)	//if mouse not locked
+		//DRAWING WALL AND CLEARING WALL
+		if (x_curr >= 0 && x_curr < BOARD_WIDTH && y_curr >= 0 && y_curr < BOARD_HEIGHT)	//checking if within boundary
 		{
-			if (x_curr != x_last || y_curr != y_last)	//if (x,y) not at same grid as last frame do things
+			if(!mouseLock)	//if mouse not locked
 			{
-				if(!board[x_curr][y_curr].isStart() || !board[x_curr][y_curr].isEnd())
+				if (x_curr != x_last || y_curr != y_last)	//if (x,y) not at same grid as last frame do things
 				{
-					if(board[x_curr][y_curr].isWall())
-						board[x_curr][y_curr].setClear();
-					else if(!board[x_curr][y_curr].isStart() && !board[x_curr][y_curr].isEnd())
-						board[x_curr][y_curr].setWall();
+					if(!board[x_curr][y_curr].isStart() || !board[x_curr][y_curr].isEnd())
+					{
+						if(board[x_curr][y_curr].isWall())
+							board[x_curr][y_curr].setClear();
+						else if(!board[x_curr][y_curr].isStart() && !board[x_curr][y_curr].isEnd())
+							board[x_curr][y_curr].setWall();
+					}
 				}
 			}
 		}
-	}
 
-	//needs to be at bottom
-	x_last = x_curr;
-	y_last = y_curr;
+		//needs to be at bottom
+		x_last = x_curr;
+		y_last = y_curr;
+	}
 }
 //==============================================================================================================================================================================
 function pickupNode()
