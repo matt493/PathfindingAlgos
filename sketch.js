@@ -377,7 +377,7 @@ async function initStartParams()
 		for (let y = 0; y < BOARD_HEIGHT * GRID_SIZE; y += GRID_SIZE)
 		{
 			var cell = new Board(x, y);
-			// if(random([0,1,2]) == 0) cell.setWall();	// DEBUG MAZE GEN
+			if(random([0,1,2]) == 0) cell.setWall();	// DEBUG MAZE GEN
 			// cell.setWall();		//init every cell as wall
 			row.push(cell);
 		}
@@ -394,10 +394,10 @@ async function initStartParams()
 			if(x+1 <= BOARD_WIDTH-1)	board[x][y].right = board[x+1][y];
 		}
 	
-	await primsMaze(board[0][0]);	//not working
+	// await primsMaze(board[0][0]);	//not working
 
-	// board[0][0].setStart();		//init start node at top left
-	// board[BOARD_WIDTH - 1][BOARD_HEIGHT - 1].setEnd();	//init end node at bottom right
+	board[0][0].setStart();		//init start node at top left
+	board[BOARD_WIDTH - 1][BOARD_HEIGHT - 1].setEnd();	//init end node at bottom right
 }
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
